@@ -22,4 +22,7 @@ if [ "$major_version" -ge "9" ]; then
 fi
 
 # Adding a 2 sec delay to the interface up, to make the dhclient happy
+echo "" | tee -a /etc/network/interfaces;
+echo "allow-hotplug eth1" | tee -a /etc/network/interfaces;
+echo "iface eth1 inet dhcp" | tee -a /etc/network/interfaces;
 echo "pre-up sleep 2" >> /etc/network/interfaces

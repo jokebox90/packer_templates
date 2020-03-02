@@ -5,6 +5,13 @@ SSHD_CONFIG="/etc/ssh/sshd_config"
 # ensure that there is a trailing newline before attempting to concatenate
 sed -i -e '$a\' "$SSHD_CONFIG"
 
+ADDRESSFAMILY="AddressFamily inet"
+if grep -q -E "^[[:space:]]*AddressFamily" "$SSHD_CONFIG"; then
+    sed -i "s/^\s*AddressFamily.*/${ADDRESSFAMILY}/" "$SSHD_CONFIG"
+else
+    echo "$ADDRESSFAMILY" >>"$SSHD_CONFIG"
+fi
+
 USEDNS="UseDNS no"
 if grep -q -E "^[[:space:]]*UseDNS" "$SSHD_CONFIG"; then
     sed -i "s/^\s*UseDNS.*/${USEDNS}/" "$SSHD_CONFIG"
