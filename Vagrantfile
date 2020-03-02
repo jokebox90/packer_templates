@@ -9,10 +9,11 @@ Vagrant.configure("2") do |config|
   config.vm.define "debian-10" do |instance|
     instance.vm.network :private_network, ip: "10.22.1.10"
     instance.vm.network "forwarded_port", guest: 22, host: 10022
+
     instance.ssh.host = "127.0.0.1"
     instance.ssh.port = "10022"
 
-    instance.vm.hostname = "debian-10"
+    # instance.vm.hostname = "debian-10"
 
     instance.vm.provider :virtualbox do |machine|
       machine.name   = "vagrant-debian-10"
