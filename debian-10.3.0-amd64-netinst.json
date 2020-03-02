@@ -1,7 +1,7 @@
 {
   "variables": {
     "box_basename": "debian-10.3",
-    "build_directory": "./builds",
+    "build_directory": "{{template_dir}}/builds",
     "http_directory": "{{template_dir}}/http",
     "build_timestamp": "1583134354",
     "cpus": "2",
