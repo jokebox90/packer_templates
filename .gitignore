@@ -1,0 +1,4 @@
+builds/
+packer_cache/
+packerlog.txt
+.vagrant/
