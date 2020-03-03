@@ -33,9 +33,6 @@
 
   "provisioners": [
     {
-      "environment_vars": [
-        "PACKER_PUBKEY_URL=https://raw.githubusercontent.com/jokebox90/packer-debian/master/ssh/id_vagrant.pub"
-      ],
       "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
       "expect_disconnect": true,
       "scripts": [

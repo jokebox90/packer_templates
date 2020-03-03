@@ -80,3 +80,15 @@ find /var/log/ansible -type f -exec chown -v ansible:ansible '{}' \;;
 
 find /var/log/ansible -type d -exec chmod -v 0770 '{}' \;;
 find /var/log/ansible -type f -exec chmod -v 0660 '{}' \;;
+
+mkdir -p $HOME_DIR/.ssh;
+
+privkey_url="https://raw.githubusercontent.com/jokebox90/packer_templates/master/ssh/id_ansible";
+curl --insecure --location "$privkey_url" > $HOME_DIR/.ssh/id_rsa;
+
+pubkey_url="https://raw.githubusercontent.com/jokebox90/packer_templates/master/ssh/id_ansible.pub";
+curl --insecure --location "$pubkey_url" > $HOME_DIR/.ssh/authorized_keys.pub;
+cp $HOME_DIR/.ssh/id_rsa.pub $HOME_DIR/.ssh/id_rsa.pub;
+
+chown -R ansible $HOME_DIR/.ssh;
+chmod -R go-rwsx $HOME_DIR/.ssh;
