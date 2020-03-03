@@ -1,21 +1,21 @@
 #!/bin/sh -eux
 
-bento='
-This system is built by the Bento project by Chef Software
-More information can be found at https://github.com/chef/bento'
+greeter="
+Ce système est maintenu pour le projet Packer Debian par PetitBoutDeCloud
+Plus de renseignements à l'adresse: https://github.com/jokebox90/packer-debian"
 
 if [ -d /etc/update-motd.d ]; then
-    MOTD_CONFIG='/etc/update-motd.d/99-bento'
+    MOTD_CONFIG='/etc/update-motd.d/99-greeter'
 
-    cat >> "$MOTD_CONFIG" <<BENTO
+    cat >> "$MOTD_CONFIG" <<GREETER
 #!/bin/sh
 
 cat <<'EOF'
-$bento
+$greeter
 EOF
-BENTO
+GREETER
 
-    chmod 0755 "$MOTD_CONFIG"
+    chmod 0755 "$MOTD_CONFIG";
 else
-    echo "$bento" >> /etc/motd
+    echo "$greeter" >> /etc/motd;
 fi
