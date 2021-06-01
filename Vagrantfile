@@ -13,8 +13,6 @@ vm_password = '4Ns1Bl3!'
 
 # - Network
 vm_network_prefix = '192.168.106'
-vm_ssh_forward_agent = true
-vm_ssh_private_key_path = "#{vm_project_path}/ssh/id_ansible"
 
 # - Provisioning
 vm_provision = <<~SCRIPT
@@ -26,8 +24,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = vm_box
   config.ssh.username = vm_username
   config.ssh.password = vm_password
-  config.ssh.forward_agent = vm_ssh_forward_agent
-  config.ssh.private_key_path = "#{vm_project_path}/ssh/id_ansible"
+  config.ssh.insert_key = false
 
   config.vm.provision "shell", inline: vm_provision
 

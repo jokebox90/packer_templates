@@ -1,94 +1,84 @@
-#!/bin/sh -eux
+#!/bin/bash -eux
 
-ANSIBLE_DISABLED=${ANSIBLE_DISABLED:-no};
-case "$ANSIBLE_DISABLED" in
-  true|yes|y|1) exit 0; ;;
-esac
+ANSIBLE_PATH="${ANSIBLE_PATH:-/var/lib/ansible}"
+ANSIBLE_CONF_PATH="/etc/ansible"
+ANSIBLE_LOG_PATH="/var/log/ansible"
 
-case `uname -m` in
-  x86_64) arch="amd64"; ;;
-  armv7l) arch="armhf"; ;;
-  *) echo "Architecture not support, aborting !"; exit 1; ;;
-esac
+GOSU="gosu ansible:ansible"
+PIP="$GOSU $ANSIBLE_PATH/env/bin/pip"
+PYTHON="$GOSU $ANSIBLE_PATH/env/bin/python3"
+TEE="$GOSU tee"
+CURL="$GOSU curl"
 
-debian_version="`lsb_release -r | awk '{print $2}'`";
-major_version="`echo $debian_version | awk -F. '{print $1}'`";
+apt-get install -y --no-install-recommends --no-install-suggests \
+  python3-venv \
+  gosu
 
-HOME_DIR="${HOME_DIR:-/var/lib/ansible}";
+mkdir -p \
+  $ANSIBLE_CONF_PATH/group_vars \
+  $ANSIBLE_CONF_PATH/host_vars \
+  $ANSIBLE_LOG_PATH \
+  $ANSIBLE_PATH
 
-adduser --system --group --home $HOME_DIR --shell /bin/bash ansible;
-echo "ansible:4Ns1Bl3!" | chpasswd -
+chown ansible:ansible \
+  $ANSIBLE_CONF_PATH \
+  $ANSIBLE_CONF_PATH/group_vars \
+  $ANSIBLE_CONF_PATH/host_vars \
+  $ANSIBLE_LOG_PATH \
+  $ANSIBLE_PATH
 
-apt-get -y install git;
+$GOSU mkdir -p \
+  $ANSIBLE_PATH/.ssh \
+  $ANSIBLE_PATH/library \
+  $ANSIBLE_PATH/roles
 
-if [ "$major_version" -ge "9" ]; then
-  apt-get -y install python3-pip;
-  su -l ansible -c 'bash -c "pip3 install --user ansible cryptography"';
-else
-  apt-get -y install python-pip;
-  su -l ansible -c 'bash -c "pip install --user ansible cryptography"';
-fi
+$GOSU touch $ANSIBLE_LOG_PATH/ansible.log
+$GOSU /usr/bin/env python3 -m venv $ANSIBLE_PATH/env
 
-echo "export PATH=$HOME_DIR/.local/bin:\$PATH" >>$HOME_DIR/.profile
+$PIP install --upgrade pip setuptools
+$PIP install \
+  ansible \
+  cryptography \
+  pyopenssl \
+  prettytable \
+  netaddr \
+  passlib
 
-mkdir -p $HOME_DIR/.ssh;
+echo "export PATH=$ANSIBLE_PATH/env/bin:\$PATH" | $TEE -a $ANSIBLE_PATH/.profile
 
-chown -v ansible:ansible $HOME_DIR/.ssh;
-chmod -v go-rwsx $HOME_DIR/.ssh;
+privkey_url="https://gitlab.com/petitboutdecloud/packer-templates/-/raw/master/ssh/id_ansible"
+$CURL --insecure --location "$privkey_url" | $TEE $ANSIBLE_PATH/.ssh/id_rsa
 
-mkdir -p $HOME_DIR/library;
-mkdir -p $HOME_DIR/roles;
+pubkey_url="https://gitlab.com/petitboutdecloud/packer-templates/-/raw/master/ssh/id_ansible.pub"
+$CURL --insecure --location "$pubkey_url" | $TEE $ANSIBLE_PATH/.ssh/authorized_keys
+cp $ANSIBLE_PATH/.ssh/authorized_keys $ANSIBLE_PATH/.ssh/id_rsa.pub
 
-chown -v ansible:ansible $HOME_DIR/library;
-chmod -v 0750 $HOME_DIR/library;
-
-chown -v ansible:ansible $HOME_DIR/roles;
-chmod -v 0750 $HOME_DIR/roles;
-
-mkdir -p /etc/ansible/group_vars;
-mkdir -p /etc/ansible/host_vars;
-
-tee /etc/ansible/ansible.cfg <<ANSIBLE
+$TEE $ANSIBLE_CONF_PATH/ansible.cfg <<ANSIBLE
 [defaults]
-inventory  = /etc/ansible/hosts
-library    = $HOME_DIR/library
-log_path   = /var/log/ansible/ansible.log
-roles_path = $HOME_DIR/roles
+
+# - Paths
+inventory  = $ANSIBLE_CONF_PATH/hosts
+library    = $ANSIBLE_PATH/library
+log_path   = $ANSIBLE_LOG_PATH/ansible.log
+roles_path = $ANSIBLE_PATH/roles
+
+# - Behavior
+deprecation_warnings = False
+host_key_checking = False
+gathering = explicit
+
+# - Reporting
+callback_whitelist = timer, debug, profile_tasks, skippy, counter_enabled, yaml, slack
+stdout_callback = yaml
+bin_ansible_callbacks = True
 ANSIBLE
 
-tee /etc/ansible/hosts <<INVENTORY
+$TEE $ANSIBLE_CONF_PATH/hosts <<INVENTORY
 [all]
 localhost
 INVENTORY
 
-tee /etc/ansible/host_vars/localhost.yml <<LOCALHOST
+$TEE $ANSIBLE_CONF_PATH/host_vars/localhost.yml <<LOCALHOST
 ansible_connection: local
-ansible_python_interpreter: /usr/bin/python3
+ansible_python_interpreter: $ANSIBLE_PATH/env/bin/python3
 LOCALHOST
-
-find /etc/ansible -type d -exec chown -v ansible:ansible '{}' \;;
-find /etc/ansible -type f -exec chown -v ansible:ansible '{}' \;;
-
-find /etc/ansible -type d -exec chmod -v 0750 '{}' \;;
-find /etc/ansible -type f -exec chmod -v 0640 '{}' \;;
-
-mkdir -p /var/log/ansible;
-touch /var/log/ansible/ansible.log;
-
-find /var/log/ansible -type d -exec chown -v ansible:ansible '{}' \;;
-find /var/log/ansible -type f -exec chown -v ansible:ansible '{}' \;;
-
-find /var/log/ansible -type d -exec chmod -v 0770 '{}' \;;
-find /var/log/ansible -type f -exec chmod -v 0660 '{}' \;;
-
-mkdir -p $HOME_DIR/.ssh;
-
-privkey_url="https://raw.githubusercontent.com/jokebox90/packer_templates/master/ssh/id_ansible";
-curl --insecure --location "$privkey_url" > $HOME_DIR/.ssh/id_rsa;
-
-pubkey_url="https://raw.githubusercontent.com/jokebox90/packer_templates/master/ssh/id_ansible.pub";
-curl --insecure --location "$pubkey_url" > $HOME_DIR/.ssh/authorized_keys;
-cp $HOME_DIR/.ssh/authorized_keys $HOME_DIR/.ssh/id_rsa.pub;
-
-chown -R ansible $HOME_DIR/.ssh;
-chmod -R go-rwsx $HOME_DIR/.ssh;
