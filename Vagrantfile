@@ -14,6 +14,7 @@ vm_password = '4Ns1Bl3!'
 # - Network
 vm_network_prefix = '192.168.106'
 vm_ssh_forward_agent = true
+vm_ssh_private_key_path = "#{vm_project_path}/ssh/id_ansible"
 
 # - Provisioning
 vm_provision = <<~SCRIPT
