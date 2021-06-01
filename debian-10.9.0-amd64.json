@@ -1,0 +1,105 @@
+{
+  "builders": [
+    {
+      "boot_command": [
+        "<esc><wait>",
+        "install <wait>",
+        " preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `preseed_path`}} <wait>",
+        "debian-installer=en_US.UTF-8 <wait>",
+        "auto <wait>",
+        "locale=en_US.UTF-8 <wait>",
+        "kbd-chooser/method=us <wait>",
+        "keyboard-configuration/xkb-keymap=us <wait>",
+        "netcfg/get_hostname={{ .Name }} <wait>",
+        "netcfg/get_domain=vagrantup.com <wait>",
+        "fb=false <wait>",
+        "debconf/frontend=noninteractive <wait>",
+        "console-setup/ask_detect=false <wait>",
+        "console-keymaps-at/keymap=us <wait>",
+        "grub-installer/bootdev=/dev/sda <wait>",
+        "<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "cpus": "{{ user `cpus` }}",
+      "disk_size": "{{user `disk_size`}}",
+      "export_opts": [
+          "--manifest",
+          "--vsys",
+          "0",
+          "--description",
+          "{{user `template`}}",
+          "--version",
+          "{{user `build_timestamp`}}"
+      ],
+      "format": "ova",
+      "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+      "guest_additions_url": "{{ user `guest_additions_url` }}",
+      "guest_os_type": "Debian_64",
+      "hard_drive_interface": "sata",
+      "headless": "{{ user `headless` }}",
+      "http_directory": "{{user `http_directory`}}",
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
+      "iso_url": "{{user `mirror`}}/{{user `mirror_directory`}}/{{user `iso_name`}}",
+      "memory": "{{ user `memory` }}",
+      "output_directory": "{{ user `build_directory` }}/packer-{{user `template`}}-virtualbox",
+      "shutdown_command": "echo 'vagrant' | sudo -S /sbin/shutdown -hP now",
+      "ssh_password": "vagrant",
+      "ssh_port": 22,
+      "ssh_timeout": "10000s",
+      "ssh_username": "vagrant",
+      "type": "virtualbox-iso",
+      "virtualbox_version_file": ".vbox_version",
+      "vm_name": "packer-{{ user `template` }}"
+    }
+  ],
+  "post-processors": [
+    {
+      "output": "{{ user `build_directory` }}/{{user `box_basename`}}.{{.Provider}}.box",
+      "type": "vagrant"
+    }
+  ],
+  "provisioners": [
+    {
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E sh -eux '{{.Path}}'",
+      "expect_disconnect": true,
+      "scripts": [
+        "{{template_dir}}/scripts/update.sh",
+        "{{template_dir}}/scripts/motd.sh",
+        "{{template_dir}}/scripts/ansible.sh",
+        "{{template_dir}}/scripts/sshd.sh",
+        "{{template_dir}}/scripts/networking.sh",
+        "{{template_dir}}/scripts/sudoers.sh",
+        "{{template_dir}}/scripts/vagrant.sh",
+        "{{template_dir}}/scripts/systemd.sh",
+        "{{template_dir}}/scripts/virtualbox.sh",
+        "{{template_dir}}/scripts/cleanup.sh",
+        "{{template_dir}}/scripts/minimize.sh"
+      ],
+      "type": "shell"
+    }
+  ],
+  "variables": {
+    "box_basename": "debian-10.9",
+    "build_directory": "{{template_dir}}/builds",
+    "build_timestamp": "1622493482",
+    "cpus": "2",
+    "disk_size": "16384",
+    "git_revision": "__unknown_git_revision__",
+    "guest_additions_url": "",
+    "headless": "true",
+    "http_directory": "{{template_dir}}/http",
+    "http_proxy": "{{env `http_proxy`}}",
+    "https_proxy": "{{env `https_proxy`}}",
+    "iso_checksum": "6e507be9fd35c8a7c6be00aefa5b550ed3d8641432b2ae533295f4bb5246642b",
+    "iso_checksum_type": "sha256",
+    "iso_name": "debian-10.9.0-amd64-xfce-CD-1.iso",
+    "memory": "2048",
+    "mirror": "http://cdimage.debian.org/cdimage/release",
+    "mirror_directory": "10.9.0/amd64/iso-cd",
+    "name": "debian-10.9.0",
+    "no_proxy": "{{env `no_proxy`}}",
+    "preseed_path": "debian-10/preseed.cfg",
+    "template": "debian-10.9.0-amd64",
+    "version": "TIMESTAMP"
+  }
+}

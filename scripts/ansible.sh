@@ -87,8 +87,8 @@ privkey_url="https://raw.githubusercontent.com/jokebox90/packer_templates/master
 curl --insecure --location "$privkey_url" > $HOME_DIR/.ssh/id_rsa;
 
 pubkey_url="https://raw.githubusercontent.com/jokebox90/packer_templates/master/ssh/id_ansible.pub";
-curl --insecure --location "$pubkey_url" > $HOME_DIR/.ssh/authorized_keys.pub;
-cp $HOME_DIR/.ssh/id_rsa.pub $HOME_DIR/.ssh/id_rsa.pub;
+curl --insecure --location "$pubkey_url" > $HOME_DIR/.ssh/authorized_keys;
+cp $HOME_DIR/.ssh/authorized_keys $HOME_DIR/.ssh/id_rsa.pub;
 
 chown -R ansible $HOME_DIR/.ssh;
 chmod -R go-rwsx $HOME_DIR/.ssh;

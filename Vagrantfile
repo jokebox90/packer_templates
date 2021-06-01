@@ -1,28 +1,47 @@
+# - Variables
+vm_project_path = ENV['VM_PROJECT_PATH']
+
+# - Hardware
+vm_box = "#{vm_project_path}/builds/debian-10.9.virtualbox.box"
+vm_vcpus = 2
+vm_memory = 2048
+
+# - Environment
+vm_basename = 'debian-10'
+vm_username = 'ansible'
+vm_password = '4Ns1Bl3!'
+
+# - Network
+vm_network_prefix = '192.168.106'
+vm_ssh_forward_agent = true
+
+# - Provisioning
+vm_provision = <<~SCRIPT
+  this_date=$(date)
+  echo I am provisioning at $this_date ...
+SCRIPT
+
 Vagrant.configure("2") do |config|
-  config.ssh.username = 'vagrant'
-  config.ssh.forward_agent = true
-  config.ssh.private_key_path = "./ssh/id_vagrant"
+  config.vm.box = vm_box
+  config.ssh.username = vm_username
+  config.ssh.password = vm_password
+  config.ssh.forward_agent = vm_ssh_forward_agent
+  config.ssh.private_key_path = "#{vm_project_path}/ssh/id_ansible"
 
-  config.vm.box = "file://builds/debian-10.3.virtualbox.box"
-  config.vm.provision "shell", inline: "echo I am provisioning at $(date) ..."
+  config.vm.provision "shell", inline: vm_provision
 
-  config.vm.define "debian-10" do |instance|
-    instance.vm.network :private_network, ip: "10.22.1.10"
-    instance.vm.network "forwarded_port", guest: 22, host: 10022
-
-    instance.ssh.host = "127.0.0.1"
-    instance.ssh.port = "10022"
-
-    # instance.vm.hostname = "debian-10"
+  config.vm.define "#{vm_basename}" do |instance|
+    instance.vm.hostname = "#{vm_basename}"
+    instance.vm.network "private_network", ip: "#{vm_network_prefix}.150"
 
     instance.vm.provider :virtualbox do |machine|
-      machine.name   = "vagrant-debian-10"
+      machine.name   = "vagrant-#{vm_basename}"
       machine.gui    = false
-      machine.memory = 4096
-      machine.cpus   = 2
+      machine.memory = vm_memory
+      machine.cpus   = vm_vcpus
       machine.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
       machine.customize ["modifyvm", :id, "--ioapic", "on"]
     end
-  end  
+  end
 
 end
